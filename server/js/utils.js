@@ -1,7 +1,6 @@
-
-var Utils = {},
-    sanitizer = require('sanitizer'),
-    Types = require("../../shared/js/gametypes");
+const Utils     = {};
+const sanitizer = require("sanitizer");
+const Types     = require("../../shared/js/gametypes");
 
 module.exports = Utils;
 
@@ -34,7 +33,7 @@ Utils.clamp = function(min, max, value) {
 
 Utils.randomOrientation = function() {
     var o, r = Utils.random(4);
-    
+
     if(r === 0)
         o = Types.Orientations.LEFT;
     if(r === 1)
@@ -43,21 +42,21 @@ Utils.randomOrientation = function() {
         o = Types.Orientations.UP;
     if(r === 3)
         o = Types.Orientations.DOWN;
-    
+
     return o;
 };
 
 Utils.Mixin = function(target, source) {
-  if (source) {
-    for (var key, keys = Object.keys(source), l = keys.length; l--; ) {
-      key = keys[l];
+    if (source) {
+        for (var key, keys = Object.keys(source), l = keys.length; l--; ) {
+            key = keys[l];
 
-      if (source.hasOwnProperty(key)) {
-        target[key] = source[key];
-      }
+            if (source.hasOwnProperty(key)) {
+                target[key] = source[key];
+            }
+        }
     }
-  }
-  return target;
+    return target;
 };
 
 Utils.distanceTo = function(x, y, x2, y2) {

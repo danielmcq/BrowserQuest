@@ -1,11 +1,9 @@
+const _     = require("underscore");
+const Utils = require("./utils");
+const Mob   = require("./Mob");
 
-var cls = require('./lib/class'),
-    _ = require('underscore'),
-    Utils = require('./utils'),
-    Types = require("../../shared/js/gametypes");
-
-module.exports = Area = cls.Class.extend({
-    init: function(id, x, y, width, height, world) {
+module.exports = class Area {
+    constructor(id, x, y, width, height, world) {
         this.id = id;
         this.x = x;
         this.y = y;
@@ -14,31 +12,31 @@ module.exports = Area = cls.Class.extend({
         this.world = world;
         this.entities = [];
         this.hasCompletelyRespawned = true;
-    },
-    
-    _getRandomPositionInsideArea: function() {
+    }
+
+    _getRandomPositionInsideArea() {
         var pos = {},
             valid = false;
-        
+
         while(!valid) {
             pos.x = this.x + Utils.random(this.width + 1);
             pos.y = this.y + Utils.random(this.height + 1);
             valid = this.world.isValidPosition(pos.x, pos.y);
         }
         return pos;
-    },
-    
-    removeFromArea: function(entity) {
-        var i = _.indexOf(_.pluck(this.entities, 'id'), entity.id);
+    }
+
+    removeFromArea(entity) {
+        var i = _.indexOf(_.pluck(this.entities, "id"), entity.id);
         this.entities.splice(i, 1);
-        
+
         if(this.isEmpty() && this.hasCompletelyRespawned && this.empty_callback) {
             this.hasCompletelyRespawned = false;
             this.empty_callback();
         }
-    },
-    
-    addToArea: function(entity) {
+    }
+
+    addToArea(entity) {
         if(entity) {
             this.entities.push(entity);
             entity.area = this;
@@ -46,25 +44,25 @@ module.exports = Area = cls.Class.extend({
                 this.world.addMob(entity);
             }
         }
-        
+
         if(this.isFull()) {
             this.hasCompletelyRespawned = true;
         }
-    },
-    
-    setNumberOfEntities: function(nb) {
+    }
+
+    setNumberOfEntities(nb) {
         this.nbEntities = nb;
-    },
-    
-    isEmpty: function() {
-        return !_.any(this.entities, function(entity) { return !entity.isDead });
-    },
-    
-    isFull: function() {
+    }
+
+    isEmpty() {
+        return !_.any(this.entities, function(entity) { return !entity.isDead; });
+    }
+
+    isFull() {
         return !this.isEmpty() && (this.nbEntities === _.size(this.entities));
-    },
-    
-    onEmpty: function(callback) {
+    }
+
+    onEmpty(callback) {
         this.empty_callback = callback;
     }
-});
+};

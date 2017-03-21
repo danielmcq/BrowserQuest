@@ -1,17 +1,18 @@
+const _     = require("underscore");
+const Item  = require("./item");
+const Utils = require("./utils");
+const Types = require("../../shared/js/gametypes");
 
-var Utils = require('./utils'),
-    Types = require("../../shared/js/gametypes");
+module.exports = class Chest extends Item {
+    constructor(id, x, y) {
+        super(id, Types.Entities.CHEST, x, y);
+    }
 
-module.exports = Chest = Item.extend({
-    init: function(id, x, y) {
-        this._super(id, Types.Entities.CHEST, x, y);
-    },
-    
-    setItems: function(items) {
+    setItems(items) {
         this.items = items;
-    },
-    
-    getRandomItem: function() {
+    }
+
+    getRandomItem() {
         var nbItems = _.size(this.items),
             item = null;
 
@@ -20,4 +21,4 @@ module.exports = Chest = Item.extend({
         }
         return item;
     }
-});
+};

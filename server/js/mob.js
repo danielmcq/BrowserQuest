@@ -1,14 +1,13 @@
+const underscore = require("underscore");
+const Character  = require("./character");
+const Messages   = require("./message");
+const Properties = require("./properties");
+const Utils      = require("./utils");
 
-var cls = require("./lib/class"),
-    _ = require("underscore"),
-    Messages = require("./message"),
-    Properties = require("./properties"),
-    Types = require("../../shared/js/gametypes");
+module.exports = class Mob extends Character {
+    constructor(id, kind, x, y) {
+        super(id, "mob", kind, x, y);
 
-module.exports = Mob = Character.extend({
-    init: function(id, kind, x, y) {
-        this._super(id, "mob", kind, x, y);
-        
         this.updateHitPoints();
         this.spawningX = x;
         this.spawningY = y;
@@ -18,31 +17,31 @@ module.exports = Mob = Character.extend({
         this.respawnTimeout = null;
         this.returnTimeout = null;
         this.isDead = false;
-    },
-    
-    destroy: function() {
+    }
+
+    destroy() {
         this.isDead = true;
         this.hatelist = [];
         this.clearTarget();
         this.updateHitPoints();
         this.resetPosition();
-        
+
         this.handleRespawn();
-    },
-    
-    receiveDamage: function(points, playerId) {
+    }
+
+    receiveDamage(points) {
         this.hitPoints -= points;
-    },
-    
-    hates: function(playerId) {
-        return _.any(this.hatelist, function(obj) { 
-            return obj.id === playerId; 
+    }
+
+    hates(playerId) {
+        return underscore.any(this.hatelist, function(obj) {
+            return obj.id === playerId;
         });
-    },
-    
-    increaseHateFor: function(playerId, points) {
+    }
+
+    increaseHateFor(playerId, points) {
         if(this.hates(playerId)) {
-            _.detect(this.hatelist, function(obj) {
+            underscore.detect(this.hatelist, function(obj) {
                 return obj.id === playerId;
             }).hate += points;
         }
@@ -52,112 +51,115 @@ module.exports = Mob = Character.extend({
 
         /*
         log.debug("Hatelist : "+this.id);
-        _.each(this.hatelist, function(obj) {
+        underscore.each(this.hatelist, function(obj) {
             log.debug(obj.id + " -> " + obj.hate);
         });*/
-        
-        if(this.returnTimeout) {
+
+        if (this.returnTimeout) {
             // Prevent the mob from returning to its spawning position
             // since it has aggroed a new player
             clearTimeout(this.returnTimeout);
             this.returnTimeout = null;
         }
-    },
-    
-    getHatedPlayerId: function(hateRank) {
+    }
+
+    getHatedPlayerId(hateRank) {
         var i, playerId,
-            sorted = _.sortBy(this.hatelist, function(obj) { return obj.hate; }),
-            size = _.size(this.hatelist);
-        
-        if(hateRank && hateRank <= size) {
+            sorted = underscore.sortBy(this.hatelist, function(obj) { return obj.hate; }),
+            size = underscore.size(this.hatelist);
+
+        if (hateRank && hateRank <= size) {
             i = size - hateRank;
-        }
-        else {
+        } else {
             i = size - 1;
         }
+
         if(sorted && sorted[i]) {
             playerId = sorted[i].id;
         }
-        
+
         return playerId;
-    },
-    
-    forgetPlayer: function(playerId, duration) {
-        this.hatelist = _.reject(this.hatelist, function(obj) { return obj.id === playerId; });
-        
-        if(this.hatelist.length === 0) {
+    }
+
+    forgetPlayer(playerId, duration) {
+        this.hatelist = underscore.reject(this.hatelist, function(obj) { return obj.id === playerId; });
+
+        if (this.hatelist.length === 0) {
             this.returnToSpawningPosition(duration);
         }
-    },
-    
-    forgetEveryone: function() {
+    }
+
+    forgetEveryone() {
         this.hatelist = [];
         this.returnToSpawningPosition(1);
-    },
-    
-    drop: function(item) {
+    }
+
+    drop(item) {
         if(item) {
             return new Messages.Drop(this, item);
         }
-    },
-    
-    handleRespawn: function() {
-        var delay = 30000,
-            self = this;
-        
-        if(this.area && this.area instanceof MobArea) {
+    }
+
+    handleRespawn() {
+        const delay = 30000;
+        const self = this;
+        // Because of circular dependencies, these have to be 'require'd inside
+        // function
+        const ChestArea = require("./chestarea");
+        const MobArea = require("./mobarea");
+
+        if (self.area && self.area instanceof MobArea) {
             // Respawn inside the area if part of a MobArea
-            this.area.respawnMob(this, delay);
-        }
-        else {
-            if(this.area && this.area instanceof ChestArea) {
-                this.area.removeFromArea(this);
+            self.area.respawnMob(self, delay);
+        } else {
+            if (self.area && self.area instanceof ChestArea) {
+                self.area.removeFromArea(self);
             }
-            
+
             setTimeout(function() {
-                if(self.respawn_callback) {
+                if (self.respawn_callback) {
                     self.respawn_callback();
                 }
             }, delay);
         }
-    },
-    
-    onRespawn: function(callback) {
+    }
+
+    onRespawn(callback) {
         this.respawn_callback = callback;
-    },
-    
-    resetPosition: function() {
+    }
+
+    resetPosition() {
         this.setPosition(this.spawningX, this.spawningY);
-    },
-    
-    returnToSpawningPosition: function(waitDuration) {
+    }
+
+    returnToSpawningPosition(waitDuration) {
         var self = this,
             delay = waitDuration || 4000;
-        
+
         this.clearTarget();
-        
+
         this.returnTimeout = setTimeout(function() {
             self.resetPosition();
             self.move(self.x, self.y);
         }, delay);
-    },
-    
-    onMove: function(callback) {
+    }
+
+    onMove(callback) {
         this.move_callback = callback;
-    },
-    
-    move: function(x, y) {
+    }
+
+    move(x, y) {
         this.setPosition(x, y);
         if(this.move_callback) {
             this.move_callback(this);
         }
-    },
-    
-    updateHitPoints: function() {
+    }
+
+    updateHitPoints() {
         this.resetHitPoints(Properties.getHitPoints(this.kind));
-    },
-    
-    distanceToSpawningPoint: function(x, y) {
+    }
+
+    distanceToSpawningPoint(x, y) {
         return Utils.distanceTo(x, y, this.spawningX, this.spawningY);
     }
-});
+};

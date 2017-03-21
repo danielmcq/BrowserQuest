@@ -1,6 +1,7 @@
+const Entity = require("./entity");
 
-module.exports = Npc = Entity.extend({
-    init: function(id, kind, x, y) {
-        this._super(id, "npc", kind, x, y);
+module.exports = class NPC extends Entity {
+    constructor(id, kind, x, y) {
+        super(id, "npc", kind, x, y);
     }
-});
+};
