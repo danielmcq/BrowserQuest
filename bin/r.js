@@ -2171,6 +2171,8 @@ var requirejs, require, define;
         def = requirejsVars.define,
         fs = nodeReq('fs'),
         path = nodeReq('path'),
+        http = nodeReq('http'),
+        nodeUrl = nodeReq('url'),
         vm = nodeReq('vm');
 
     //Supply an implementation that allows synchronous get of a module.
@@ -2218,36 +2220,52 @@ var requirejs, require, define;
         context.loaded[moduleName] = false;
         context.scriptCount += 1;
 
-        if (path.existsSync(url)) {
-            contents = fs.readFileSync(url, 'utf8');
+        var parsedUrl = nodeUrl.parse(url)
 
-            contents = req.makeNodeWrapper(contents);
-            try {
-                vm.runInThisContext(contents, fs.realpathSync(url));
-            } catch (e) {
-                err = new Error('Evaluating ' + url + ' as module "' +
-                                moduleName + '" failed with error: ' + e);
-                err.originalError = e;
-                err.moduleName = moduleName;
-                err.fileName = url;
-                return req.onError(err);
-            }
-        } else {
-            def(moduleName, function () {
-                try {
-                    return (context.config.nodeRequire || req.nodeRequire)(moduleName);
-                } catch (e) {
-                    err = new Error('Calling node\'s require("' +
-                                        moduleName + '") failed with error: ' + e);
-                    err.originalError = e;
-                    err.moduleName = moduleName;
-                    return req.onError(err);
+        if (parsedUrl.hostname) {
+            http.get(url,function(res){
+                var error;
+
+                if (res.statusCode !== 200) {
+                    error = new Error("Invalid URL", url)
                 }
-            });
+                res.setEncoding('utf8');
+                res.on("error",function(){})
+                res.on('data', (chunk) => contents += chunk);
+                res.on("end",function(){
+                    if (contents) {
+
+                        contents = req.makeNodeWrapper(contents);
+                        try {
+                            vm.runInThisContext(contents, fs.realpathSync(url));
+                        } catch (e) {
+                            err = new Error('Evaluating ' + url + ' as module "' +
+                                            moduleName + '" failed with error: ' + e);
+                            err.originalError = e;
+                            err.moduleName = moduleName;
+                            err.fileName = url;
+                            return req.onError(err);
+                        }
+                    } else {
+                        def(moduleName, function () {
+                            try {
+                                return (context.config.nodeRequire || req.nodeRequire)(moduleName);
+                            } catch (e) {
+                                err = new Error('Calling node\'s require("' +
+                                                    moduleName + '") failed with error: ' + e);
+                                err.originalError = e;
+                                err.moduleName = moduleName;
+                                return req.onError(err);
+                            }
+                        });
+                    }
+
+                    //Support anonymous modules.
+                    context.completeLoad(moduleName);
+                })
+            })
         }
 
-        //Support anonymous modules.
-        context.completeLoad(moduleName);
 
         return undefined;
     };
